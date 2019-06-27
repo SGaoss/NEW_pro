@@ -240,6 +240,11 @@ export default {
                 message: '删除成功！'
               })
               this.init()
+            } else if (res.data.meta.status === 401) {
+              this.$message({
+                type: 'warning',
+                message: res.data.meta.msg
+              })
             }
           })
           .catch(() => {

@@ -12,36 +12,19 @@
           text-color="#fff"
           active-text-color="#ffd04b"
         >
-          <el-submenu index="1">
+          <el-submenu :index="item.id+''" v-for='item in menuList' :key='item.id'>
             <template slot="title">
               <i class="el-icon-location"></i>
-              <span>用户管理</span>
+              <span>{{item.authName}}</span>
             </template>
-            <el-menu-item index="/home/users">
+            <el-menu-item :index="'/home/'+subitem.path" v-for='subitem in item.children' :key='subitem.id'>
               <template slot="title">
                 <i class="el-icon-location"></i>
-                <span>用户列表</span>
+                <span>{{subitem.authName}}</span>
               </template>
             </el-menu-item>
           </el-submenu>
-          <el-submenu index="2">
-            <template slot="title">
-              <i class="el-icon-location"></i>
-              <span>权限管理</span>
-            </template>
-            <el-menu-item index="/home/role">
-              <template slot="title">
-                <i class="el-icon-location"></i>
-                <span>角色列表</span>
-              </template>
-            </el-menu-item>
-            <el-menu-item index="/home/right">
-              <template slot="title">
-                <i class="el-icon-location"></i>
-                <span>权限列表</span>
-              </template>
-            </el-menu-item>
-          </el-submenu>
+
         </el-menu>
       </el-aside>
       <el-container>
@@ -62,6 +45,24 @@
 </template>
 
 <script>
+import { getLeftMenu } from '@/api/rights.js'
+export default {
+  data () {
+    return {
+      menuList: []
+    }
+  },
+  mounted () {
+    getLeftMenu()
+      .then(res => {
+        console.log(res)
+        this.menuList = res.data.data
+      })
+      .catch(err => {
+        console.log(err)
+      })
+  }
+}
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->

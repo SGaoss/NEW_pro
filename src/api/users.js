@@ -1,14 +1,15 @@
-import axios from 'axios'
+// import axios from 'axios'
 
-axios.defaults.baseURL = 'http://localhost:8888/api/private/v1'
-axios.interceptors.request.use(function (config) {
-  var token = localStorage.getItem('itcast_pro_token')
-  config.headers['Authorization'] = token
+// axios.defaults.baseURL = 'http://localhost:8888/api/private/v1'
+// axios.interceptors.request.use(function (config) {
+//   var token = localStorage.getItem('itcast_pro_token')
+//   config.headers['Authorization'] = token
 
-  return config
-}, function (error) {
-  return Promise.reject(error)
-})
+//   return config
+// }, function (error) {
+//   return Promise.reject(error)
+// })
+import axios from '@/utils/myaxios.js'
 
 export const userlogin = (data) => {
   return axios({

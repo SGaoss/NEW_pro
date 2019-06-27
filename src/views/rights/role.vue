@@ -5,7 +5,7 @@
       <el-breadcrumb-item>权限管理</el-breadcrumb-item>
       <el-breadcrumb-item>角色列表</el-breadcrumb-item>
     </el-breadcrumb>
-    <el-button type="success" plain>添加角色</el-button>
+    <el-button type="success" plain @click='adddialogFormVisible=true'>添加角色</el-button>
 
     <el-table style="width: 100%" :data="roleList">
       <el-table-column type="expand">
@@ -44,7 +44,7 @@
       <el-table-column label="角色名称" prop="roleName"></el-table-column>
       <el-table-column label="描述" prop="roleDesc"></el-table-column>
       <el-table-column label="操作">
-        <template slot-scope="scope">
+        <template v-slot="scope">
           <el-tooltip class="item" effect="dark" content="编辑" placement="top">
             <el-button type="info" icon="el-icon-edit"></el-button>
           </el-tooltip>
@@ -57,6 +57,7 @@
         </template>
       </el-table-column>
     </el-table>
+    <!-- 角色授权 -->
     <el-dialog title="角色授权" :visible.sync="grantdialogFormVisible">
       <div class="box">
         <el-tree
@@ -74,14 +75,34 @@
         <el-button type="primary" @click='grantSubmit'>确 定</el-button>
       </div>
     </el-dialog>
+    <!-- 添加角色对话框 -->
+    <el-dialog title="添加角色" :visible.sync="adddialogFormVisible">
+      <el-form :model="roleForm"  :label-width="'120px'">
+        <el-form-item label="角色名称"  v-focus>
+          <el-input v-model="roleForm.roleName" auto-complete="off"></el-input>
+        </el-form-item>
+        <el-form-item label="角色描述">
+          <el-input v-model="roleForm.roleDesc" auto-complete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="adddialogFormVisible = false">取 消</el-button>
+        <el-button type="primary" @click='add'>确 定</el-button>
+      </div>
+      </el-dialog>
   </div>
 </template>
 <script>
-import { getAllRoleList, deleteRightById, grantRightByRoleId } from '@/api/roles.js'
+import { getAllRoleList, deleteRightById, grantRightByRoleId, addRole } from '@/api/roles.js'
 import { getAllRightsList } from '@/api/rights.js'
 export default {
   data () {
     return {
+      adddialogFormVisible: false,
+      roleForm: {
+        roleName: '',
+        roleDesc: ''
+      },
       roleId: '',
       checkedArr: [],
       roleList: [],
@@ -93,27 +114,51 @@ export default {
       grantdialogFormVisible: false
     }
   },
+  directives: {
+    'focus': {
+      inserted (el) {
+        el.focus()
+      }
+    }
+  },
   methods: {
+    add () {
+      addRole(this.roleForm)
+        .then(res => {
+          console.log(res)
+          if (res.data.meta.status === 201) {
+            this.$message({
+              type: 'success',
+              message: res.data.meta.msg
+            })
+            this.adddialogFormVisible = false
+            this.init()
+          }
+        })
+    },
     grantSubmit () {
       var arr = this.$refs.tree.getCheckedNodes()
-      console.log(arr)
+      // console.log(arr)
       var temp = arr.map(value => {
         return value.id + ',' + value.pid
       })
-      console.log(temp)
+      // console.log(temp)
       var str = temp.join(',')
-      console.log(str)
-      console.log(str.split(','))
+      // console.log(str)
+      // console.log(str.split(','))
       var obj = new Set(str.split(','))
-      console.log(obj)
+      // console.log(obj)
       var final = [...obj]
       console.log(final.join(','))
       grantRightByRoleId(this.roleId, final.join(','))
         .then(res => {
           console.log(res)
         })
+      this.init()
+      this.grantdialogFormVisible = false
     },
     showGrantDialog (row) {
+      this.roleId = row.id
       this.grantdialogFormVisible = true
       getAllRightsList('tree')
         .then(res => {
@@ -147,12 +192,17 @@ export default {
             row.children = res.data.data
           }
         })
+    },
+    init () {
+      getAllRoleList().then(res => {
+        // console.log(res)
+        // 所有角色数据
+        this.roleList = res.data.data
+      })
     }
   },
   mounted () {
-    getAllRoleList().then(res => {
-      this.roleList = res.data.data
-    })
+    this.init()
   }
 }
 </script>
