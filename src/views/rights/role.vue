@@ -13,13 +13,14 @@
           <!-- 一级权限 -->
           <el-row v-for="first in scope.row.children" :key="first.id" style='margin-bottom:15px'>
             <el-col :span="4">
-              <el-tag closable type="success" @close='deleteRight(scope.row,first.id)' v-if="first.children.length!==0">{{first.authName}}</el-tag>
+              <el-tag closable type="success"  @close='cnt=0;deleteRight(scope.row,first.id)' v-if="first.children.length!==0">{{first.authName}}</el-tag>
             </el-col>
             <el-col :span="20">
               <el-row v-for="second in first.children" :key="second.id" style='margin-bottom:10px;'>
                 <!-- 二级权限 -->
                 <el-col :span="4">
-                  <el-tag closable type="info"  @close='deleteRight(scope.row,second.id)'  v-if='second.children.length !== 0'>{{second.authName}}</el-tag>
+                  <el-tag closable type="info"  @close='cnt=0;deleteRight(scope.row,second.id)'
+                  >{{second.authName}}</el-tag>
                 </el-col>
                 <!-- 三级权限 -->
                 <el-col :span="20">
@@ -29,7 +30,7 @@
                     v-for="third in second.children"
                     :key="third.id"
                     style='margin:0 4px 4px 0'
-                    @close="deleteRight(scope.row,third.id)"
+                    @close="cnt=0;deleteRight(scope.row,third.id)"
                   >{{third.authName}}</el-tag>
                 </el-col>
               </el-row>
@@ -98,6 +99,7 @@ import { getAllRightsList } from '@/api/rights.js'
 export default {
   data () {
     return {
+      cnt: 0,
       adddialogFormVisible: false,
       roleForm: {
         roleName: '',
@@ -134,6 +136,9 @@ export default {
             this.adddialogFormVisible = false
             this.init()
           }
+        })
+        .catch(err => {
+          console.log(err)
         })
     },
     grantSubmit () {
@@ -185,9 +190,24 @@ export default {
         .then(res => {
         // console.log(res);
           if (res.data.meta.status === 200) {
-            this.$message({
-              type: 'success',
-              message: res.data.meta.msg
+            if (this.cnt === 0) {
+              this.$message({
+                type: 'success',
+                message: res.data.meta.msg
+              })
+              this.cnt++
+            }
+            var data = res.data.data
+            data.forEach((v1, i1) => {
+              if (v1.children.length === 0) {
+                this.deleteRight(row, v1.id)
+              } else {
+                v1.children.forEach((v2, i2) => {
+                  if (v2.children.length === 0) {
+                    this.deleteRight(row, v2.id)
+                  }
+                })
+              }
             })
             row.children = res.data.data
           }

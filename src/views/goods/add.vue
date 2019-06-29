@@ -6,14 +6,14 @@
       <el-breadcrumb-item>商品管理</el-breadcrumb-item>
       <el-breadcrumb-item>添加商品</el-breadcrumb-item>
     </el-breadcrumb>
-      <el-card class="box-card">
-    <el-steps :active="activeName - 0" finish-status="success">
-      <el-step title="步骤 1"></el-step>
-      <el-step title="步骤 2"></el-step>
-      <el-step title="步骤 3"></el-step>
-      <el-step title="步骤 4"></el-step>
-    </el-steps>
-    <!-- 添加标签页 -->
+    <el-card class="box-card">
+      <el-steps :active="activeName - 0" finish-status="success">
+        <el-step title="步骤 1"></el-step>
+        <el-step title="步骤 2"></el-step>
+        <el-step title="步骤 3"></el-step>
+        <el-step title="步骤 4"></el-step>
+      </el-steps>
+      <!-- 添加标签页 -->
       <el-form style="margin-top:15px" label-width="80px">
         <el-tabs v-model="activeName" tab-position="left">
           <el-tab-pane label="基本参数" name="0">
@@ -31,13 +31,31 @@
             </el-form-item>
             <el-form-item label="商品分类">
               <!-- 添加级联选择器 -->
-              <el-cascader :options="cateList" :props="cateprops" clearable></el-cascader>
+              <el-cascader :options="cateList" :props="cateprops" clearable @change="getcatid"></el-cascader>
             </el-form-item>
           </el-tab-pane>
-          <el-tab-pane label="商品图片" name="1">配置管理</el-tab-pane>
-          <el-tab-pane label="商品描述" name="2">角色管理</el-tab-pane>
+          <el-tab-pane label="商品图片" name="1">
+            <el-upload
+              class="upload-demo"
+              action="http://localhost:8888/api/private/v1/upload"
+              :headers='getToken()'
+              :on-preview="handlePreview"
+              :on-remove="handleRemove"
+              :on-success='handleSuccess'
+              :before-upload="bu"
+              :file-list="fileList"
+              list-type="picture"
+            >
+              <el-button size="small" type="primary">点击上传</el-button>
+              <div slot="tip" class="el-upload__tip">只能上传jpg/png文件，且不超过500kb</div>
+            </el-upload>
+          </el-tab-pane>
+          <el-tab-pane label="商品描述" name="2">
+              <quill-editor v-model="goodsForm.goods_introduce" ref="myQuillEditor" :options="editorOption" style='height:300px;border-bottom:1px solid #ccc;'></quill-editor>
+          </el-tab-pane>
           <el-tab-pane label="商品参数" name="3">定时任务补偿</el-tab-pane>
         </el-tabs>
+         <el-button type="primary" style='float:right;margin:20px 0' @click='addGoods'>添加商品</el-button>
       </el-form>
     </el-card>
   </div>
@@ -45,10 +63,14 @@
 
 <script>
 import { getCategoriesList } from '@/api/category.js'
+import { addGoodsInfo } from '@/api/goods.js'
 export default {
   data () {
     return {
+      editorOption: {},
       activeName: '0',
+      cateList: [],
+      fileList: [],
       cateprops: {
         value: 'cat_id',
         label: 'cat_name',
@@ -62,20 +84,68 @@ export default {
         goods_weight: '',
         goods_introduce: '',
         pics: [],
-        atts: [],
-        cateList: [],
-        cateprops: {
-          value: 'cat_id',
-          label: 'cat_name',
-          children: 'children'
+        atts: []
+      }
+    }
+  },
+  methods: {
+    bu (file) {
+      console.log(file)
+      if (file.type.indexOf('image/') !== 0) {
+        this.$message({
+          type: 'warning',
+          message: '请选择图片格式的文件'
+        })
+        return false
+      }
+    },
+    addGoods () {
+      console.log(this.goodsForm)
+      addGoodsInfo(this.goodsForm)
+        .then(res => {
+          console.log(res)
+          if (res.data.meta.status === 201) {
+            this.$message({
+              type: 'success',
+              message: res.data.meta.msg
+            })
+            this.$router.push({ name: 'List' })
+          }
+        })
+        .catch(err => {
+          console.log(err)
+        })
+    },
+    getToken () {
+      var token = localStorage.getItem('itcast_pro_token')
+      return { 'Authorization': token }
+    },
+    handleSuccess (response, file, fileList) {
+      console.log(response)
+      this.goodsForm.pics.push({ pic: response.data.tmp_path })
+    },
+    handlePreview () {},
+    handleRemove (file, fileList) {
+      console.log(file)
+      if (!file.response) {
+        return
+      }
+      var filename = file.response.data.tmp_path
+      for (var i = 0; i < this.goodsForm.pics.length; i++) {
+        if (this.goodsForm.pics[i].pic === filename) {
+          this.goodsForm.pics.splice(i, 1)
+          break
         }
       }
+    },
+    getcatid (value) {
+      this.goodsForm.goods_cat = value.join(',')
     }
   },
   mounted () {
     getCategoriesList([3])
       .then(res => {
-        console.log(res)
+        // console.log(res)
         this.cateList = res.data.data
       })
       .catch(err => {

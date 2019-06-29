@@ -15,7 +15,13 @@ Vue.use(VueRouter)
 
 var router = new VueRouter({
   routes: [
-
+    {
+      name: 'default',
+      path: '/',
+      redirect: {
+        name: 'Home'
+      }
+    },
     {
       name: 'Login',
       path: '/login',

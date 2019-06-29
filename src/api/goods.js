@@ -6,3 +6,10 @@ export const getAllGoodsList = (obj) => {
     params: obj
   })
 }
+export const addGoodsInfo = (data) => {
+  return axios({
+    method: 'post',
+    url: 'goods',
+    data
+  })
+}
